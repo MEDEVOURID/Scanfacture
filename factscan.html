@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scanner Facture Live</title>
+    <title>Scanner Facture HD</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
     <style>
-        /* --- STYLE GENERAL --- */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 10px; }
+        /* --- STYLE IDENTIQUE AVEC AJOUTS POUR LA CAMÉRA --- */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 10px; }
         .container { max-width: 1000px; margin: 0 auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
         h1 { text-align: center; color: #2c3e50; font-size: 1.4rem; margin-bottom: 15px; }
 
-        /* --- ZONE CAMERA LIVE --- */
+        /* --- ZONE CAMERA HD --- */
         .camera-wrapper {
             position: relative;
             width: 100%;
@@ -22,110 +22,96 @@
             background: #000;
             border-radius: 12px;
             overflow: hidden;
-            display: none; /* Caché par défaut */
+            display: none; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        video {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
+        video { width: 100%; height: auto; display: block; object-fit: cover; }
 
-        /* Bouton flottant pour prendre la photo */
+        /* Bouton Capture Rond Blanc */
         .capture-btn {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
-            background-color: white;
-            border-radius: 50%;
-            border: 4px solid rgba(0,0,0,0.2);
-            cursor: pointer;
-            z-index: 10;
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 70px; height: 70px; background-color: rgba(255,255,255,0.9);
+            border-radius: 50%; border: 4px solid rgba(255,255,255,0.4);
+            cursor: pointer; z-index: 10; box-shadow: 0 0 10px rgba(0,0,0,0.3);
         }
-        .capture-btn:active { background-color: #ccc; }
+        .capture-btn:active { transform: translateX(-50%) scale(0.95); background-color: #fff; }
 
-        /* --- ZONE UPLOAD CLASSIQUE (Fallback) --- */
+        /* Bouton Flash */
+        .flash-btn {
+            position: absolute; top: 15px; right: 15px;
+            background: rgba(0,0,0,0.5); color: white; border: 1px solid white;
+            border-radius: 50%; width: 40px; height: 40px; font-size: 20px;
+            display: none; cursor: pointer; z-index: 10; align-items: center; justify-content: center;
+        }
+
+        /* --- BUTTONS & UI --- */
         .action-buttons { text-align: center; margin-bottom: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        
-        #preview-img { max-width: 100%; max-height: 300px; margin: 15px auto; display: none; border-radius: 8px; border: 2px solid #ddd; }
+        #preview-img { max-width: 100%; max-height: 400px; margin: 15px auto; display: none; border-radius: 8px; border: 2px solid #ddd; }
         #status { margin-top: 10px; font-weight: bold; color: #d35400; text-align: center; font-size: 0.9rem; min-height: 20px; }
-
-        /* --- FORMULAIRE --- */
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; }
-        .section-header { grid-column: 1 / -1; background: #f8f9fa; padding: 10px; font-weight: bold; margin-top: 10px; border-left: 4px solid #3498db; color: #2c3e50; text-transform: uppercase; font-size: 0.85em; }
+        
+        /* FORM & TABLE STYLES (Conservés) */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; }
+        .section-header { grid-column: 1 / -1; background: #f8f9fa; padding: 10px; font-weight: bold; margin-top: 10px; border-left: 4px solid #3498db; color: #2c3e50; font-size: 0.85em; }
         .full-width { grid-column: 1 / -1; }
         label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; font-weight: 600; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; background-color: #fafafa; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; background-color: #fafafa; }
         input:focus { border-color: #3498db; background-color: #fff; outline: none; }
-
-        /* --- BOUTONS --- */
-        .btn { border: none; padding: 12px 20px; border-radius: 8px; font-size: 15px; cursor: pointer; color: white; font-weight: 600; transition: 0.2s; }
+        
+        .btn { border: none; padding: 12px 20px; border-radius: 8px; font-size: 15px; cursor: pointer; color: white; font-weight: 600; }
         .btn-blue { background-color: #3498db; }
-        .btn-orange { background-color: #e67e22; width: 100%; max-width: 300px; }
         .btn-green { background-color: #27ae60; }
+        .btn-orange { background-color: #e67e22; width: 100%; }
         .btn-red { background-color: #e74c3c; padding: 6px 12px; }
-        .btn:disabled { background-color: #bdc3c7; opacity: 0.7; cursor: not-allowed; }
-
-        /* --- TABLEAU --- */
         .table-container { margin-top: 30px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
         th { background-color: #3498db; color: white; }
 
-        /* Mobile Adjustments */
-        @media (max-width: 768px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .action-buttons { flex-direction: column; }
-            .btn { width: 100%; }
-        }
+        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .btn { width: 100%; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📸 Scanner Facture (Live)</h1>
+    <h1>📸 Scanner Facture HD</h1>
 
     <div class="action-buttons">
-        <button class="btn btn-blue" onclick="startCamera()">📷 Activer Caméra</button>
-        <button class="btn btn-green" onclick="document.getElementById('file-input').click()">📂 Importer Fichier</button>
+        <button class="btn btn-blue" onclick="startCamera()">📷 Activer Caméra HD</button>
+        <button class="btn btn-green" onclick="document.getElementById('file-input').click()">📂 Importer Image</button>
         <input type="file" id="file-input" accept="image/*" style="display:none">
     </div>
 
     <div class="camera-wrapper" id="camera-wrapper">
         <video id="video" autoplay playsinline></video>
-        <button class="capture-btn" onclick="takePhoto()" title="Prendre la photo"></button>
+        <button class="flash-btn" id="flash-btn" onclick="toggleTorch()">⚡</button>
+        <button class="capture-btn" onclick="takePhoto()" title="Prendre photo"></button>
     </div>
     
     <canvas id="canvas" style="display:none;"></canvas>
-
     <img id="preview-img" alt="Aperçu">
     <p id="status"></p>
 
     <div id="data-form" style="display:none;">
-        <h3 style="text-align:center;">Vérification</h3>
+        <h3 style="text-align:center;">Vérification des données</h3>
         <div class="form-grid">
             <div class="section-header">🏢 Fournisseur</div>
             <div class="full-width"><label>Nom</label><input type="text" id="emetteur_nom"></div>
-            <div><label>Adresse</label><input type="text" id="emetteur_adresse"></div>
+            <div class="full-width"><label>Adresse</label><input type="text" id="emetteur_adresse"></div>
             <div><label>SIRET</label><input type="text" id="emetteur_siret"></div>
-            
-            <div class="section-header">👤 Client</div>
-            <div class="full-width"><label>Nom</label><input type="text" id="client_nom"></div>
 
-            <div class="section-header">📄 Info Facture</div>
+            <div class="section-header">📄 Facture</div>
             <div><label>Numéro</label><input type="text" id="facture_num"></div>
             <div><label>Date</label><input type="date" id="facture_date"></div>
+            <div class="full-width"><label>Client</label><input type="text" id="client_nom"></div>
 
-            <div class="section-header">📦 Détail & Prix</div>
+            <div class="section-header">💰 Montants</div>
             <div class="full-width"><label>Désignation</label><input type="text" id="detail_designation"></div>
             <div><label>Total HT</label><input type="number" step="0.01" id="total_ht"></div>
-            <div><label>Montant TVA</label><input type="number" step="0.01" id="total_tva"></div>
+            <div><label>TVA</label><input type="number" step="0.01" id="total_tva"></div>
             <div class="full-width">
-                <label style="color:#27ae60;">TOTAL TTC</label>
-                <input type="number" step="0.01" id="total_ttc" style="background:#e8f8f5; font-weight:bold; font-size:1.2em; border: 2px solid #27ae60; color:#27ae60;">
+                <label style="color:#27ae60;">Total TTC</label>
+                <input type="number" step="0.01" id="total_ttc" style="font-weight:bold; color:#27ae60; border:2px solid #27ae60;">
             </div>
 
             <div style="display:none;">
@@ -143,15 +129,15 @@
     </div>
 
     <div class="table-container">
-        <h3>Factures scannées</h3>
+        <h3>Liste (Session en cours)</h3>
         <table id="invoices-table">
             <thead><tr><th>Date</th><th>Fournisseur</th><th>TTC</th><th>Action</th></tr></thead>
             <tbody id="table-body">
-                <tr><td colspan="4" style="text-align:center; padding:15px; color:#999;">Liste vide.</td></tr>
+                <tr><td colspan="4" style="text-align:center; padding:15px; color:#999;">Aucune donnée.</td></tr>
             </tbody>
         </table>
         <div style="text-align:center; margin-top:20px;">
-            <button id="btn-export" class="btn btn-green" onclick="exportFinalExcel()" disabled>📥 Télécharger Excel</button>
+            <button id="btn-export" class="btn btn-green" onclick="exportFinalExcel()" disabled>📥 Excel Complet</button>
         </div>
     </div>
 </div>
@@ -159,161 +145,169 @@
 <script>
     let allInvoices = [];
     let videoStream = null;
+    let track = null; // Piste vidéo pour le contrôle (Zoom/Flash)
+    let torchStatus = false;
 
-    // Elements DOM
+    // DOM Elements
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const cameraWrapper = document.getElementById('camera-wrapper');
     const previewImg = document.getElementById('preview-img');
     const statusText = document.getElementById('status');
     const dataForm = document.getElementById('data-form');
-    const fileInput = document.getElementById('file-input');
+    const flashBtn = document.getElementById('flash-btn');
 
-    // --- 1. GESTION CAMERA LIVE (getUserMedia) ---
+    // --- 1. CAMERA HAUTE DEFINITION ---
     async function startCamera() {
-        // Cacher l'ancien aperçu et le formulaire
         resetUI();
         
+        // Configuration HD : On demande une résolution idéale très haute (4K)
+        // Si le téléphone ne peut pas, il donnera la meilleure dispo (1080p ou 720p)
+        const constraints = {
+            video: {
+                facingMode: { exact: "environment" }, // Caméra arrière
+                width: { ideal: 4096 }, // Demande 4K
+                height: { ideal: 2160 },
+                focusMode: { ideal: "continuous" } // Demande autofocus
+            }
+        };
+
         try {
-            // Demande l'accès à la caméra (environment = caméra arrière sur mobile)
-            videoStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: { exact: "environment" } } 
-            }).catch(() => {
-                // Fallback si "exact environment" échoue (souvent sur PC)
-                return navigator.mediaDevices.getUserMedia({ video: true });
-            });
+            videoStream = await navigator.mediaDevices.getUserMedia(constraints)
+                .catch(err => navigator.mediaDevices.getUserMedia({ video: true })); // Fallback PC
 
             video.srcObject = videoStream;
             cameraWrapper.style.display = 'block';
-            statusText.innerText = "Cadrez la facture et appuyez sur le rond blanc.";
+            statusText.innerText = "Stabilisez la caméra et prenez la photo.";
+
+            // Récupération des capacités (pour le Flash)
+            track = videoStream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            
+            // Si le flash est dispo, on affiche le bouton
+            if (capabilities.torch) {
+                flashBtn.style.display = 'flex';
+            }
+
         } catch (err) {
-            alert("Erreur caméra : " + err.message + "\nAssurez-vous d'être en HTTPS.");
-            console.error(err);
+            alert("Erreur accès caméra (Vérifiez HTTPS) : " + err.message);
+        }
+    }
+
+    // Gestion du Flash
+    async function toggleTorch() {
+        if (!track) return;
+        torchStatus = !torchStatus;
+        try {
+            await track.applyConstraints({ advanced: [{ torch: torchStatus }] });
+            flashBtn.style.background = torchStatus ? "rgba(255,255,0,0.5)" : "rgba(0,0,0,0.5)";
+        } catch (err) {
+            console.error("Flash erreur:", err);
         }
     }
 
     function stopCamera() {
         if (videoStream) {
+            // Eteindre le flash avant de couper
+            if(torchStatus && track) track.applyConstraints({ advanced: [{ torch: false }] });
             videoStream.getTracks().forEach(track => track.stop());
             videoStream = null;
         }
         cameraWrapper.style.display = 'none';
+        flashBtn.style.display = 'none';
     }
 
     function takePhoto() {
-        // Dessiner l'image vidéo sur le canvas
-        canvas.width = video.videoWidth;
+        // Capture à la RÉSOLUTION RÉELLE de la caméra (pas la taille affichée à l'écran)
+        canvas.width = video.videoWidth; 
         canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
         
-        // Convertir en image
-        const dataUrl = canvas.toDataURL('image/png');
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        
+        // Amélioration simple : convertir en image
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0); // Qualité max JPG
+        
         previewImg.src = dataUrl;
         previewImg.style.display = 'block';
         
-        stopCamera(); // Arrêter la vidéo
-        runOCR(dataUrl); // Lancer l'analyse
+        stopCamera();
+        runOCR(dataUrl);
     }
 
-    // --- 2. GESTION UPLOAD CLASSIQUE ---
-    fileInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            resetUI();
-            previewImg.src = e.target.result;
-            previewImg.style.display = 'block';
-            runOCR(e.target.result); // Peut prendre base64 ou File
-        };
-        reader.readAsDataURL(file);
-    });
-
-    // --- 3. OCR (MOTEUR D'ANALYSE) ---
+    // --- 2. OCR & PARSING ---
     async function runOCR(imageSource) {
-        statusText.innerText = "⏳ Analyse en cours... Patientez.";
+        statusText.innerText = "🔍 Traitement HD en cours...";
         
         try {
-            const { data: { text } } = await Tesseract.recognize(
-                imageSource,
-                'fra', // Français
-                { logger: m => { if(m.status === 'recognizing text') statusText.innerText = `⏳ Lecture : ${Math.round(m.progress * 100)}%`; } }
-            );
+            const { data: { text } } = await Tesseract.recognize(imageSource, 'fra', {
+                logger: m => { if(m.status === 'recognizing text') statusText.innerText = `⏳ Lecture : ${Math.round(m.progress * 100)}%`; }
+            });
 
-            statusText.innerText = "✅ Analyse terminée !";
+            statusText.innerText = "✅ Analyse terminée.";
             parseTextToForm(text);
             dataForm.style.display = 'block';
             dataForm.scrollIntoView({ behavior: 'smooth' });
-
         } catch (error) {
             statusText.innerText = "❌ Erreur OCR : " + error.message;
         }
     }
 
+    // Fonction de parsing identique à la précédente (Optimisée Regex)
     function parseTextToForm(text) {
-        // Nettoyage et regex (Identique à la version précédente)
         document.getElementById('emetteur_nom').value = '';
         document.getElementById('facture_num').value = '';
         
-        const findMatch = (regex) => { const m = text.match(regex); return m ? m[1] || m[0] : ''; };
+        const find = (regex) => (text.match(regex) || [])[1] || '';
+        const findRaw = (regex) => (text.match(regex) || [])[0] || '';
 
-        // Date
-        const dateStr = findMatch(/(\d{2}[/-]\d{2}[/-]\d{4})/);
-        if(dateStr) {
-            const parts = dateStr.split(/[\/-]/);
-            if(parts.length === 3) document.getElementById('facture_date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        // Dates (JJ/MM/AAAA ou AAAA-MM-JJ)
+        let dateRaw = findRaw(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})/);
+        if(dateRaw) {
+            let [d, m, y] = dateRaw.split(/[\/\-]/);
+            document.getElementById('facture_date').value = `${y}-${m}-${d}`;
         }
-        // SIRET & Numéro
-        document.getElementById('emetteur_siret').value = findMatch(/\b\d{14}\b/);
-        document.getElementById('facture_num').value = findMatch(/Facture\s*n?°?\s*([A-Za-z0-9-]+)/i);
 
-        // Prix (TTC, HT, TVA)
-        const prices = text.match(/\b\d+[.,]\d{2}\b/g);
+        // SIRET
+        document.getElementById('emetteur_siret').value = findRaw(/\b\d{14}\b/);
+        // Numéro Facture
+        document.getElementById('facture_num').value = find(/Facture\s*n?°?[:\s]*([A-Z0-9\-\/]+)/i);
+
+        // Prix (Cherche montants formatés)
+        const prices = text.match(/\b\d+[\.,]\d{2}\b/g);
         if(prices) {
-            const numbers = prices.map(p => parseFloat(p.replace(',', '.'))).sort((a,b) => b-a);
-            if(numbers.length > 0) document.getElementById('total_ttc').value = numbers[0]; 
-            if(numbers.length > 1) document.getElementById('total_ht').value = numbers[1];
-            if(numbers.length > 1) document.getElementById('total_tva').value = (numbers[0] - numbers[1]).toFixed(2);
+            const nums = prices.map(p => parseFloat(p.replace(',', '.'))).sort((a,b) => b-a);
+            if(nums.length > 0) document.getElementById('total_ttc').value = nums[0]; 
+            if(nums.length > 1) document.getElementById('total_ht').value = nums[1];
+            if(nums.length > 1) document.getElementById('total_tva').value = (nums[0] - nums[1]).toFixed(2);
         }
-        // Désignation
-        document.getElementById('detail_designation').value = text.split('\n').slice(0, 3).join(' ').substring(0, 60);
+        
+        // Texte (Première ligne pertinente)
+        const lines = text.split('\n').filter(l => l.length > 5 && !l.match(/facture|date|total/i));
+        if(lines.length > 0) document.getElementById('detail_designation').value = lines[0].substring(0, 50);
     }
 
-    // --- 4. GESTION DONNEES & TABLEAU ---
+    // --- 3. GESTION LISTE & EXPORT ---
     function addInvoiceToList() {
+        const getVal = (id) => document.getElementById(id).value;
+        
         const invoice = {
             id: Date.now(),
-            // Récupération de tous les champs (visibles et cachés)
-            emetteur_nom: document.getElementById('emetteur_nom').value,
-            emetteur_adresse: document.getElementById('emetteur_adresse').value,
-            emetteur_siret: document.getElementById('emetteur_siret').value,
-            emetteur_statut: document.getElementById('emetteur_statut').value,
-            emetteur_tva: document.getElementById('emetteur_tva').value,
-            client_nom: document.getElementById('client_nom').value,
-            client_adresse: document.getElementById('client_adresse').value,
-            client_tva: document.getElementById('client_tva').value,
-            facture_num: document.getElementById('facture_num').value,
-            facture_date: document.getElementById('facture_date').value,
-            detail_designation: document.getElementById('detail_designation').value,
-            detail_qte: document.getElementById('detail_qte').value,
-            detail_pu: document.getElementById('detail_pu').value,
-            detail_taux: document.getElementById('detail_taux_tva').value,
-            detail_total: document.getElementById('detail_total_ligne').value,
-            total_ht: document.getElementById('total_ht').value,
-            total_tva: document.getElementById('total_tva').value,
-            total_ttc: document.getElementById('total_ttc').value,
-            mention_echeance: document.getElementById('mention_echeance').value,
-            mention_penalites: document.getElementById('mention_penalites').value,
-            mention_indemnite: document.getElementById('mention_indemnite').value,
-            mention_bc: document.getElementById('mention_bc').value,
-            mention_assurance: document.getElementById('mention_assurance').value,
-            mention_conditions: document.getElementById('mention_conditions').value
+            emetteur_nom: getVal('emetteur_nom'), emetteur_adresse: getVal('emetteur_adresse'), emetteur_siret: getVal('emetteur_siret'),
+            emetteur_statut: getVal('emetteur_statut'), emetteur_tva: getVal('emetteur_tva'),
+            client_nom: getVal('client_nom'), client_adresse: getVal('client_adresse'), client_tva: getVal('client_tva'),
+            facture_num: getVal('facture_num'), facture_date: getVal('facture_date'),
+            detail_designation: getVal('detail_designation'), detail_qte: getVal('detail_qte'), detail_pu: getVal('detail_pu'),
+            detail_taux: getVal('detail_taux_tva'), detail_total: getVal('detail_total_ligne'),
+            total_ht: getVal('total_ht'), total_tva: getVal('total_tva'), total_ttc: getVal('total_ttc'),
+            mention_echeance: getVal('mention_echeance'), mention_penalites: getVal('mention_penalites'),
+            mention_indemnite: getVal('mention_indemnite'), mention_bc: getVal('mention_bc'),
+            mention_conditions: getVal('mention_conditions'), mention_assurance: getVal('mention_assurance')
         };
 
         allInvoices.push(invoice);
         renderTable();
         resetUI();
-        alert("Facture ajoutée !");
     }
 
     function renderTable() {
@@ -322,51 +316,50 @@
         tbody.innerHTML = "";
         
         if (allInvoices.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:15px; color:#999;">Liste vide.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;">Aucune donnée.</td></tr>';
             btnExport.disabled = true; return;
         }
 
         btnExport.disabled = false;
         allInvoices.forEach((inv, index) => {
             tbody.innerHTML += `<tr>
-                <td>${inv.facture_date}</td>
-                <td>${inv.emetteur_nom || '...'}</td>
-                <td style="font-weight:bold">${inv.total_ttc} €</td>
-                <td><button class="btn btn-red" onclick="deleteInvoice(${index})">X</button></td>
+                <td>${inv.facture_date}</td><td>${inv.emetteur_nom}</td>
+                <td><strong>${inv.total_ttc} €</strong></td>
+                <td><button class="btn btn-red" onclick="deleteInvoice(${index})">🗑️</button></td>
             </tr>`;
         });
     }
 
-    function deleteInvoice(index) {
-        if(confirm("Supprimer ?")) { allInvoices.splice(index, 1); renderTable(); }
-    }
+    function deleteInvoice(idx) { if(confirm("Supprimer ?")) { allInvoices.splice(idx,1); renderTable(); }}
 
     function resetUI() {
-        dataForm.style.display = 'none';
-        previewImg.style.display = 'none';
-        statusText.innerText = '';
-        stopCamera();
+        dataForm.style.display = 'none'; previewImg.style.display = 'none';
+        statusText.innerText = ''; stopCamera();
+        document.getElementById('file-input').value = '';
     }
 
-    // --- 5. EXPORT EXCEL ---
     function exportFinalExcel() {
-        // Mapping pour Excel avec titres de colonnes propres
-        const excelData = allInvoices.map(inv => ({
-            "Nom Émetteur": inv.emetteur_nom, "Adresse Émetteur": inv.emetteur_adresse, "Statut Juridique": inv.emetteur_statut,
-            "SIREN/SIRET": inv.emetteur_siret, "N° TVA Émetteur": inv.emetteur_tva, "Nom Client": inv.client_nom,
-            "Adresse Client": inv.client_adresse, "N° TVA Client": inv.client_tva, "Numéro Facture": inv.facture_num,
-            "Date Émission": inv.facture_date, "Désignation": inv.detail_designation, "Quantité": inv.detail_qte,
-            "Prix Unit. HT": inv.detail_pu, "Taux TVA (%)": inv.detail_taux, "Total Ligne HT": inv.detail_total,
-            "Total HT Global": inv.total_ht, "Montant TVA": inv.total_tva, "Total TTC": inv.total_ttc,
-            "Échéance": inv.mention_echeance, "Pénalités": inv.mention_penalites, "Indemnité 40€": inv.mention_indemnite,
-            "Bon Commande": inv.mention_bc, "Conditions Paiement": inv.mention_conditions, "Assurance": inv.mention_assurance
+        const data = allInvoices.map(inv => ({
+            "Fournisseur": inv.emetteur_nom, "Adresse Frn": inv.emetteur_adresse, "SIRET": inv.emetteur_siret,
+            "Client": inv.client_nom, "Facture N°": inv.facture_num, "Date": inv.facture_date,
+            "Libellé": inv.detail_designation, "HT Global": parseFloat(inv.total_ht||0), 
+            "TVA": parseFloat(inv.total_tva||0), "TTC": parseFloat(inv.total_ttc||0),
+            "Echéance": inv.mention_echeance, "Conditions": inv.mention_conditions
         }));
-        
-        const ws = XLSX.utils.json_to_sheet(excelData);
+        const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Compta");
-        XLSX.writeFile(wb, `Scan_Factures_${new Date().toISOString().slice(0,10)}.xlsx`);
+        XLSX.writeFile(wb, `Scan_HD_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
+
+    // Gestion de l'input fichier classique (fallback)
+    document.getElementById('file-input').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = evt => { resetUI(); previewImg.src = evt.target.result; previewImg.style.display='block'; runOCR(evt.target.result); };
+        reader.readAsDataURL(file);
+    });
 </script>
 
 </body>
